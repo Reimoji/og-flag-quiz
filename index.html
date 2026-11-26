@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Flag Rush</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="A timed flag quiz with all 193 UN members: name the flag or find the flag, on easy, medium or hard.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap">
 <style>
@@ -24,6 +25,9 @@
   --bad: #c4283a;
   --bad-bg: #fbe1e4;
   --shadow: 0 1px 2px rgba(20,33,61,.08), 0 6px 20px rgba(20,33,61,.08);
+  --ease: cubic-bezier(.2,.8,.2,1);
+  --ease-enter: cubic-bezier(.22,1,.36,1);
+  --m-in: 150ms; --m-out: 120ms; --m-press: 90ms;
   --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
   --body: "DM Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
 }
@@ -49,7 +53,8 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--b
 .wrap { max-width: 640px; margin: 0 auto; padding-block: 20px 40px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; }
 button { font: inherit; color: inherit; cursor: pointer; }
-button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; transition: none; }
+button { touch-action: manipulation; }
 .label { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .num { font-variant-numeric: tabular-nums; }
 
@@ -62,16 +67,16 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 .strip img { height: 30px; aspect-ratio: 4/3; border-radius: 3px; box-shadow: 0 0 0 1px var(--line); flex: none; }
 .section { display: grid; gap: 10px; margin-bottom: 22px; }
 .modes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.mode { text-align: left; background: var(--surface); border: 2px solid var(--line); border-radius: 14px; padding: 14px; display: grid; gap: 8px; align-content: start; transition: border-color .15s, transform .15s; }
-.mode:hover { transform: translateY(-1px); }
+.mode { text-align: left; background: var(--surface); border: 2px solid var(--line); border-radius: 14px; padding: 14px; display: grid; gap: 8px; align-content: start; transition: border-color var(--m-out) var(--ease), transform var(--m-out) var(--ease), box-shadow var(--m-out) var(--ease); }
+
 .mode[aria-pressed="true"] { border-color: var(--accent); box-shadow: var(--shadow); }
 .mode .ill { display: flex; gap: 4px; align-items: center; height: 40px; }
 .mode .ill .f { height: 34px; aspect-ratio: 4/3; border-radius: 3px; background: var(--surface-2); }
 .mode .ill .bar { height: 8px; border-radius: 4px; background: var(--surface-2); }
-.mode h3 { font-size: 18px; font-weight: 600; }
+.mode h2 { font-size: 18px; font-weight: 600; }
 .mode p { margin: 0; font-size: 13px; color: var(--muted); }
 .seg { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--surface-2); padding: 4px; border-radius: 12px; gap: 4px; }
-.seg button { border: 0; background: transparent; padding: 10px 6px; border-radius: 9px; font-weight: 700; }
+.seg button { border: 0; background: transparent; min-height: 44px; padding: 10px 6px; border-radius: 9px; font-weight: 700; }
 .seg button[aria-pressed="true"] { background: var(--surface); box-shadow: var(--shadow); color: var(--accent); }
 .diffnote { font-size: 14px; color: var(--muted); min-height: 2.9em; margin: 0; }
 .best { display: flex; justify-content: space-between; align-items: baseline; background: var(--surface); border-radius: 12px; padding: 12px 14px; border: 1px solid var(--line); }
@@ -84,7 +89,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 /* Play */
 .hud { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 10px; }
 .hud .score { font-family: var(--display); font-size: 26px; font-weight: 800; }
-.quit { border: 0; background: transparent; color: var(--muted); font-weight: 700; padding: 6px 0; }
+.quit { border: 0; background: transparent; color: var(--muted); font-weight: 700; min-height: 44px; padding: 0 2px; }
 .timer { height: 10px; background: var(--surface-2); border-radius: 5px; overflow: hidden; margin-bottom: 18px; }
 .timer i { display: block; height: 100%; width: 100%; background: var(--gold); border-radius: 5px; transform-origin: left; }
 .timer.low i { background: var(--accent); }
@@ -113,7 +118,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 .feedback .msg small { display: block; font-weight: 500; color: var(--muted); font-size: 13px; }
 .feedback .pts { font-family: var(--display); font-weight: 800; font-size: 24px; color: var(--good); }
 .feedback .pts.zero { color: var(--bad); }
-.next { border: 0; background: var(--ink); color: var(--bg); border-radius: 10px; padding: 10px 16px; font-weight: 700; }
+.next { border: 0; background: var(--ink); color: var(--bg); border-radius: 10px; min-height: 44px; padding: 0 16px; font-weight: 700; }
 .pop { animation: pop .35s ease-out; }
 @keyframes pop { from { transform: scale(.92); opacity: .4; } to { transform: none; opacity: 1; } }
 
@@ -142,11 +147,37 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 .secs { font-weight: 700; width: 2ch; text-align: right; color: var(--muted); }
 .timer.low + .secs { color: var(--accent); }
 .bump { animation: bump .35s ease-out; }
-@keyframes bump { 40% { transform: scale(1.18); color: var(--good); } }
-.opt:active:not(:disabled) { transform: scale(.98); }
+@keyframes bump { 40% { transform: scale(1.1); color: var(--good); } }
+
 .opt.wrong { animation: shake .3s; }
 @keyframes shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
 .quit.armed { color: var(--accent); }
+
+/* Hover and press layer: buttons step 1px up on hover, sink 1px and scale .985 on press; linked cards lift 2px */
+.cta, .ghost, .next, .savebtn, .opt, .seg button, .mode { transition: transform var(--m-out) var(--ease), background-color var(--m-out) var(--ease), border-color var(--m-out) var(--ease), box-shadow var(--m-out) var(--ease), opacity var(--m-out) var(--ease); }
+@media (hover: hover) and (pointer: fine) {
+  .cta:hover:not(:disabled), .next:hover, .savebtn:hover, .ghost:hover, .opt:hover:not(:disabled) { transform: translateY(-1px); transition-duration: var(--m-in); }
+  .cta:hover:not(:disabled), .savebtn:hover { background: color-mix(in srgb, var(--accent) 86%, var(--ink)); }
+  .next:hover { background: color-mix(in srgb, var(--ink) 86%, var(--bg)); }
+  .ghost:hover { border-color: var(--muted); background: var(--surface); }
+  .mode:hover { transform: translateY(-2px); border-color: var(--muted); box-shadow: 0 10px 24px rgba(20,33,61,.10); transition-duration: var(--m-in); }
+  .mode[aria-pressed="true"]:hover { border-color: var(--accent); }
+  .seg button:hover:not([aria-pressed="true"]) { background: color-mix(in srgb, var(--surface) 60%, transparent); }
+  .quit:hover { color: var(--ink); }
+}
+.cta:active:not(:disabled), .next:active, .savebtn:active, .ghost:active, .opt:active:not(:disabled), .seg button:active, .mode:active { transform: translateY(1px) scale(.985); transition-duration: var(--m-press); }
+
+/* Entrance: the title rises out of its mask once per visit, then the rest of the intro fades up 12px */
+.m-enter .brand h1 span { display: inline-block; transform: translateY(110%); }
+.brand h1 { overflow: hidden; padding-bottom: .06em; }
+.m-enter.is-entering .brand h1 span { animation: rise 700ms var(--ease-enter) forwards; }
+.m-enter .brand .pennant, .m-enter .tag, .m-enter .strip, .m-enter .home-rest { opacity: 0; transform: translateY(12px); }
+.m-enter.is-entering .brand .pennant { animation: up 520ms var(--ease-enter) 0ms forwards; }
+.m-enter.is-entering .tag { animation: up 520ms var(--ease-enter) 350ms forwards; }
+.m-enter.is-entering .strip { animation: up 520ms var(--ease-enter) 410ms forwards; }
+.m-enter.is-entering .home-rest { animation: up 520ms var(--ease-enter) 470ms forwards; }
+@keyframes rise { to { transform: none; } }
+@keyframes up { to { opacity: 1; transform: none; } }
 
 /* Scoreboard */
 .board { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
@@ -162,14 +193,18 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 .saveform .row { display: flex; gap: 8px; }
 .saveform input { flex: 1; min-width: 0; font: inherit; font-weight: 700; padding: 12px; border-radius: 10px; border: 2px solid var(--line); background: var(--bg); color: var(--ink); }
 .saveform input:focus { outline: none; border-color: var(--accent); }
-.savebtn { border: 0; border-radius: 10px; background: var(--accent); color: var(--accent-ink); font-weight: 800; padding: 0 16px; }
+.savebtn { border: 0; border-radius: 10px; background: var(--accent); color: var(--accent-ink); font-weight: 800; min-height: 44px; padding: 0 16px; }
 .note { text-align: center; color: var(--muted); margin: 0 0 22px; font-weight: 500; }
 @media (max-width: 420px) {
   .opts.names { grid-template-columns: 1fr; }
   .opt { min-height: 52px; padding: 12px; }
   .stage { padding: 14px; }
 }
-@media (prefers-reduced-motion: reduce) { .pop, .bump, .opt.wrong { animation: none; } .mode, .dots i { transition: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .pop, .bump, .opt.wrong { animation: none; }
+  .cta, .ghost, .next, .savebtn, .opt, .seg button, .mode { transition-property: background-color, border-color, color, opacity; transform: none !important; }
+  .m-enter .brand h1 span, .m-enter .brand .pennant, .m-enter .tag, .m-enter .strip, .m-enter .home-rest { opacity: 1; transform: none; animation: none !important; }
+}
 </style>
 </head>
 <body>
@@ -179,22 +214,23 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
   <section id="home">
     <div class="brand">
       <svg class="pennant" viewBox="0 0 44 32" aria-hidden="true"><rect x="0" y="0" width="3" height="32" rx="1.5" fill="var(--ink)"/><path d="M3 2 L42 10 L3 18 Z" fill="var(--accent)"/><path d="M3 18 L30 22 L3 28 Z" fill="var(--gold)"/></svg>
-      <h1>Flag Rush</h1>
+      <h1><span>Flag Rush</span></h1>
     </div>
-    <p class="tag">195 flags: all 193 UN members plus the two observer states. Answer right, and answer fast.</p>
+    <p class="tag">Name 15 flags against the clock. All 193 UN members are in, plus Vatican City and Palestine.</p>
     <div class="strip" id="strip" aria-hidden="true"></div>
 
+    <div class="home-rest">
     <div class="section">
       <span class="label">Game</span>
       <div class="modes">
         <button class="mode" id="mode-flag" aria-pressed="true">
           <div class="ill"><div class="f" style="background:linear-gradient(90deg,#14213d 33%,#fff 33% 66%,#d7263d 66%)"></div><div style="display:grid;gap:5px;flex:1"><div class="bar" style="width:80%"></div><div class="bar" style="width:60%"></div></div></div>
-          <h3>Name the flag</h3>
+          <h2>Name the flag</h2>
           <p>See a flag, pick its country from four names.</p>
         </button>
         <button class="mode" id="mode-name" aria-pressed="false">
           <div class="ill"><div class="bar" style="width:34px;height:10px;background:var(--ink);opacity:.7"></div><div class="f" style="height:24px"></div><div class="f" style="height:24px"></div><div class="f" style="height:24px"></div></div>
-          <h3>Find the flag</h3>
+          <h2>Find the flag</h2>
           <p>See a country, pick its flag from four.</p>
         </button>
       </div>
@@ -217,6 +253,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 
     <button class="cta" id="start" disabled>Loading flags…</button>
     <p class="foot">15 flags per round, 10 seconds each. A right answer scores 50, plus up to 100 more the faster you are. Keys 1–4 work too. Scores are saved in this browser. Flags are from the open-source flag-icons set (MIT) and all shown at 4:3.</p>
+    </div>
   </section>
 
   <!-- PLAY -->
@@ -468,7 +505,7 @@ function answer(c) {
   const name = byCode[q.ans].name;
   let msg, sub;
   if (ok) { msg = `Right: ${name}`; sub = `${secs.toFixed(1)}s`; }
-  else { msg = c === null ? `Time's up. It was ${name}` : `It was ${name}`; sub = c ? `You picked ${byCode[c].name}` : ""; }
+  else { msg = c === null ? `Out of time: it was ${name}` : `It was ${name}`; sub = c ? `You picked ${byCode[c].name}` : ""; }
   if (!ok && fam) sub = (sub ? sub + ". " : "") + `Family: ${fam.name}`;
   const last = game.i === ROUND - 1;
   $("feedback").innerHTML = `<div class="msg"></div><div style="display:flex;gap:12px;align-items:center"><span class="pts num ${ok ? "" : "zero"}">+${pts}</span><button class="next" id="next">${last ? "Results" : "Next"}</button></div>`;
@@ -489,14 +526,14 @@ function finish() {
   const rank = rankFor(game.score);
   $("r-mode").textContent = modeName();
   $("r-boardlabel").textContent = modeName();
-  $("r-score").textContent = game.score.toLocaleString();
+  countUp($("r-score"), game.score);
   $("r-best").hidden = !rank;
   $("r-best").textContent = rank === 1 ? "New top score" : `Good for #${rank} on the scoreboard`;
   const note = $("r-note"), form = $("saveform");
   form.hidden = !rank;
   const b = getBoard();
   note.hidden = !!rank;
-  if (!rank) note.textContent = game.score === 0 ? "No points this time. Every right answer counts, so have another go."
+  if (!rank) note.textContent = game.score === 0 ? "No points this round. Play again to get on the scoreboard."
     : `The top ${BOARD_SIZE} starts at ${b[b.length - 1].score.toLocaleString()} points.`;
   renderBoard($("r-board"), BOARD_SIZE);
   $("r-correct").textContent = `${game.correct}/${ROUND}`;
@@ -504,7 +541,7 @@ function finish() {
   $("r-streak").textContent = game.bestStreak;
   const box = $("r-miss"); box.innerHTML = "";
   if (!game.misses.length) {
-    box.innerHTML = `<div class="perfect">Perfect round. Every flag right.</div>`;
+    box.innerHTML = `<div class="perfect">You got all 15 flags right.</div>`;
   } else {
     box.innerHTML = `<div class="section"><span class="label">Flags to review</span><div class="miss"></div></div>`;
     const list = box.querySelector(".miss");
@@ -564,6 +601,24 @@ document.addEventListener("keydown", e => {
   } else if (game.locked && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); next(); }
 });
 
+function countUp(el, to) {
+  el.textContent = to.toLocaleString();
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches || to <= 0) return;
+  const t0 = performance.now(), dur = 1000, ease = x => 1 - Math.pow(1 - x, 3);
+  el.style.minWidth = el.offsetWidth + "px";
+  const step = now => { const k = Math.min(1, (now - t0) / dur); el.textContent = Math.round(to * ease(k)).toLocaleString(); if (k < 1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+
+/* ---------- entrance (once per visit) ---------- */
+(() => {
+  const root = document.documentElement;
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  root.classList.add("m-enter");
+  requestAnimationFrame(() => root.classList.add("is-entering"));
+  setTimeout(() => root.classList.remove("m-enter", "is-entering"), 1300);
+})();
+
 /* ---------- boot ---------- */
 renderHome();
 fetch("flags.json").then(r => r.json()).then(svgs => {
@@ -571,7 +626,7 @@ fetch("flags.json").then(r => r.json()).then(svgs => {
   const strip = $("strip");
   shuffle(ALL).slice(0, 18).forEach(c => { const i = new Image(); i.src = FLAG[c]; i.alt = ""; strip.append(i); });
   $("start").disabled = false; $("start").textContent = "Start";
-}).catch(() => { $("start").textContent = "Flags didn't load. Reload the page to try again."; });
+}).catch(() => { $("start").textContent = "The flags didn't load. Reload the page to try again."; });
 </script>
 
 </body>
