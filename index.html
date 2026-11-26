@@ -388,7 +388,7 @@ function answer(c) {
   const m = $("feedback").querySelector(".msg"); m.textContent = msg;
   if (sub) { const s = document.createElement("small"); s.textContent = sub; m.append(s); }
   $("next").onclick = next;
-  advanceT = setTimeout(next, ok ? 1100 : 2600);
+  advanceT = setTimeout(next, ok ? 900 : 2400);
 }
 
 function next() {
