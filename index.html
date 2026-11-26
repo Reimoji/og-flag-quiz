@@ -1,0 +1,452 @@
+<title>Flag Rush</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap">
+<style>
+/* Layout: one centered play column (max 640px); screens swap in place — home, play, results. Signal-flag palette: navy ink, signal red, pennant yellow. */
+:root {
+  --bg: #eef1f6;
+  --surface: #ffffff;
+  --surface-2: #e3e8f0;
+  --ink: #14213d;
+  --muted: #5a6680;
+  --line: #cfd6e2;
+  --accent: #d7263d;
+  --accent-ink: #ffffff;
+  --gold: #f2a900;
+  --good: #1d8a4f;
+  --good-bg: #dcf3e6;
+  --bad: #c4283a;
+  --bad-bg: #fbe1e4;
+  --shadow: 0 1px 2px rgba(20,33,61,.08), 0 6px 20px rgba(20,33,61,.08);
+  --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --body: "DM Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1322; --surface: #172038; --surface-2: #212c48; --ink: #e8ecf5; --muted: #98a3bd; --line: #2c3858;
+    --accent: #ff4d63; --accent-ink: #1a0a0d; --gold: #ffc233; --good: #4fd18a; --good-bg: #133826; --bad: #ff6b7c; --bad-bg: #3d1820;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.3);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1322; --surface: #172038; --surface-2: #212c48; --ink: #e8ecf5; --muted: #98a3bd; --line: #2c3858;
+  --accent: #ff4d63; --accent-ink: #1a0a0d; --gold: #ffc233; --good: #4fd18a; --good-bg: #133826; --bad: #ff6b7c; --bad-bg: #3d1820;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.3);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.45; }
+.wrap { max-width: 640px; margin: 0 auto; padding-block: 20px 40px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.label { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.num { font-variant-numeric: tabular-nums; }
+
+/* Home */
+.brand { display: flex; align-items: center; gap: 14px; margin-bottom: 6px; }
+.pennant { width: 44px; height: 32px; flex: none; }
+.brand h1 { font-size: clamp(34px, 8vw, 48px); font-weight: 800; letter-spacing: -.02em; line-height: 1; }
+.tag { color: var(--muted); margin: 6px 0 22px; }
+.strip { display: flex; gap: 8px; overflow: hidden; margin-bottom: 26px; mask-image: linear-gradient(90deg, #000 70%, transparent); -webkit-mask-image: linear-gradient(90deg, #000 70%, transparent); }
+.strip img { height: 30px; aspect-ratio: 4/3; border-radius: 3px; box-shadow: 0 0 0 1px var(--line); flex: none; }
+.section { display: grid; gap: 10px; margin-bottom: 22px; }
+.modes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.mode { text-align: left; background: var(--surface); border: 2px solid var(--line); border-radius: 14px; padding: 14px; display: grid; gap: 8px; transition: border-color .15s, transform .15s; }
+.mode:hover { transform: translateY(-1px); }
+.mode[aria-pressed="true"] { border-color: var(--accent); box-shadow: var(--shadow); }
+.mode .ill { display: flex; gap: 4px; align-items: center; height: 40px; }
+.mode .ill .f { height: 34px; aspect-ratio: 4/3; border-radius: 3px; background: var(--surface-2); }
+.mode .ill .bar { height: 8px; border-radius: 4px; background: var(--surface-2); }
+.mode h3 { font-size: 18px; font-weight: 600; }
+.mode p { margin: 0; font-size: 13px; color: var(--muted); }
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--surface-2); padding: 4px; border-radius: 12px; gap: 4px; }
+.seg button { border: 0; background: transparent; padding: 10px 6px; border-radius: 9px; font-weight: 700; }
+.seg button[aria-pressed="true"] { background: var(--surface); box-shadow: var(--shadow); color: var(--accent); }
+.diffnote { font-size: 14px; color: var(--muted); min-height: 2.9em; margin: 0; }
+.best { display: flex; justify-content: space-between; align-items: baseline; background: var(--surface); border-radius: 12px; padding: 12px 14px; border: 1px solid var(--line); }
+.best strong { font-family: var(--display); font-size: 22px; }
+.cta { width: 100%; border: 0; border-radius: 14px; background: var(--accent); color: var(--accent-ink); font-family: var(--display); font-weight: 800; font-size: 20px; padding: 16px; letter-spacing: .01em; box-shadow: var(--shadow); }
+.cta:disabled { opacity: .6; cursor: wait; }
+.ghost { width: 100%; border: 2px solid var(--line); border-radius: 14px; background: transparent; font-weight: 700; padding: 13px; }
+.foot { margin-top: 22px; font-size: 12px; color: var(--muted); }
+
+/* Play */
+.hud { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 10px; }
+.hud .score { font-family: var(--display); font-size: 26px; font-weight: 800; }
+.quit { border: 0; background: transparent; color: var(--muted); font-weight: 700; padding: 6px 0; }
+.timer { height: 10px; background: var(--surface-2); border-radius: 5px; overflow: hidden; margin-bottom: 18px; }
+.timer i { display: block; height: 100%; width: 100%; background: var(--gold); border-radius: 5px; transform-origin: left; }
+.timer.low i { background: var(--accent); }
+.stage { background: var(--surface); border-radius: 18px; box-shadow: var(--shadow); padding: 20px; display: grid; gap: 18px; position: relative; }
+.prompt-flag { width: min(100%, 360px); aspect-ratio: 4/3; margin: 0 auto; display: block; border-radius: 6px; box-shadow: 0 0 0 1px var(--line), var(--shadow); background: var(--surface-2); }
+.prompt-name { text-align: center; padding-block: 10px; }
+.prompt-name h2 { font-size: clamp(28px, 7vw, 40px); font-weight: 800; letter-spacing: -.01em; }
+.opts { display: grid; gap: 10px; }
+.opts.names { grid-template-columns: 1fr 1fr; }
+.opt { border: 2px solid var(--line); background: var(--bg); border-radius: 12px; padding: 14px 12px; font-weight: 700; text-align: left; display: flex; gap: 10px; align-items: center; min-height: 60px; transition: border-color .12s, background .12s; }
+.opt:hover:not(:disabled) { border-color: var(--ink); }
+.opt .k { flex: none; width: 24px; height: 24px; border-radius: 6px; background: var(--surface-2); color: var(--muted); font-size: 12px; display: grid; place-items: center; }
+.opt span:last-child { min-width: 0; overflow-wrap: anywhere; }
+.opts.flags { grid-template-columns: 1fr 1fr; }
+.opts.flags .opt { flex-direction: column; padding: 8px; gap: 6px; position: relative; }
+.opts.flags .opt .k { position: absolute; top: 12px; left: 12px; background: rgba(0,0,0,.55); color: #fff; z-index: 1; }
+.opts.flags img { width: 100%; aspect-ratio: 4/3; border-radius: 6px; box-shadow: 0 0 0 1px var(--line); display: block; }
+.opts.flags .cap { font-size: 13px; font-weight: 700; text-align: center; min-height: 1.3em; visibility: hidden; }
+.opts.revealed .cap { visibility: visible; }
+.opt.right { border-color: var(--good); background: var(--good-bg); }
+.opt.wrong { border-color: var(--bad); background: var(--bad-bg); }
+.opt:disabled { cursor: default; }
+.opts.revealed .opt:not(.right):not(.wrong) { opacity: .55; }
+.feedback { min-height: 48px; display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 14px; }
+.feedback .msg { font-weight: 700; }
+.feedback .msg small { display: block; font-weight: 500; color: var(--muted); font-size: 13px; }
+.feedback .pts { font-family: var(--display); font-weight: 800; font-size: 24px; color: var(--good); }
+.feedback .pts.zero { color: var(--bad); }
+.next { border: 0; background: var(--ink); color: var(--bg); border-radius: 10px; padding: 10px 16px; font-weight: 700; }
+.pop { animation: pop .35s ease-out; }
+@keyframes pop { from { transform: scale(.92); opacity: .4; } to { transform: none; opacity: 1; } }
+
+/* Results */
+.result-head { text-align: center; display: grid; gap: 6px; margin-block: 10px 20px; }
+.result-head .big { font-family: var(--display); font-size: clamp(56px, 15vw, 84px); font-weight: 800; line-height: 1; letter-spacing: -.03em; }
+.newbest { display: inline-block; background: var(--gold); color: #1d1500; font-weight: 800; padding: 4px 10px; border-radius: 99px; font-size: 13px; justify-self: center; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 22px; }
+.stat { background: var(--surface); border-radius: 12px; padding: 12px; text-align: center; border: 1px solid var(--line); }
+.stat b { display: block; font-family: var(--display); font-size: 24px; }
+.miss { display: grid; gap: 8px; margin-bottom: 22px; }
+.miss-row { display: grid; grid-template-columns: 64px 1fr; gap: 12px; align-items: center; background: var(--surface); border-radius: 12px; padding: 10px; border: 1px solid var(--line); }
+.miss-row img { width: 64px; aspect-ratio: 4/3; border-radius: 4px; box-shadow: 0 0 0 1px var(--line); }
+.miss-row div { min-width: 0; }
+.miss-row small { color: var(--bad); display: block; }
+.actions { display: grid; gap: 10px; }
+.perfect { text-align: center; background: var(--good-bg); color: var(--good); font-weight: 700; padding: 14px; border-radius: 12px; margin-bottom: 22px; }
+@media (max-width: 420px) {
+  .opts.names { grid-template-columns: 1fr; }
+  .opt { min-height: 52px; padding: 12px; }
+  .stage { padding: 14px; }
+}
+@media (prefers-reduced-motion: reduce) { .pop { animation: none; } .mode { transition: none; } }
+</style>
+
+<div class="wrap">
+  <!-- HOME -->
+  <section id="home">
+    <div class="brand">
+      <svg class="pennant" viewBox="0 0 44 32" aria-hidden="true"><rect x="0" y="0" width="3" height="32" rx="1.5" fill="var(--ink)"/><path d="M3 2 L42 10 L3 18 Z" fill="var(--accent)"/><path d="M3 18 L30 22 L3 28 Z" fill="var(--gold)"/></svg>
+      <h1>Flag Rush</h1>
+    </div>
+    <p class="tag">195 flags: all 193 UN members plus the two observer states. Answer right, and answer fast.</p>
+    <div class="strip" id="strip" aria-hidden="true"></div>
+
+    <div class="section">
+      <span class="label">Game</span>
+      <div class="modes">
+        <button class="mode" id="mode-flag" aria-pressed="true">
+          <div class="ill"><div class="f" style="background:linear-gradient(90deg,#14213d 33%,#fff 33% 66%,#d7263d 66%)"></div><div style="display:grid;gap:5px;flex:1"><div class="bar" style="width:80%"></div><div class="bar" style="width:60%"></div></div></div>
+          <h3>Name the flag</h3>
+          <p>See a flag, pick its country from four names.</p>
+        </button>
+        <button class="mode" id="mode-name" aria-pressed="false">
+          <div class="ill"><div class="bar" style="width:34px;height:10px;background:var(--ink);opacity:.7"></div><div class="f" style="height:24px"></div><div class="f" style="height:24px"></div><div class="f" style="height:24px"></div></div>
+          <h3>Find the flag</h3>
+          <p>See a country, pick its flag from four.</p>
+        </button>
+      </div>
+    </div>
+
+    <div class="section">
+      <span class="label">Difficulty</span>
+      <div class="seg" role="group" aria-label="Difficulty">
+        <button id="d-easy" data-d="easy" aria-pressed="true">Easy</button>
+        <button id="d-medium" data-d="medium" aria-pressed="false">Medium</button>
+        <button id="d-hard" data-d="hard" aria-pressed="false">Hard</button>
+      </div>
+      <p class="diffnote" id="diffnote"></p>
+    </div>
+
+    <div class="section">
+      <div class="best"><span class="label">Your best · <span id="bestlabel"></span></span><strong class="num" id="bestval">—</strong></div>
+    </div>
+
+    <button class="cta" id="start" disabled>Loading flags…</button>
+    <p class="foot">15 flags per round, 10 seconds each. A right answer scores 50, plus up to 100 more the faster you are. Keys 1–4 work too. Flags are from the open-source flag-icons set (MIT) and all shown at 4:3.</p>
+  </section>
+
+  <!-- PLAY -->
+  <section id="play" hidden>
+    <div class="hud">
+      <div><span class="label">Flag <span class="num" id="qn">1</span> of 15</span></div>
+      <div class="score num" id="score">0</div>
+      <button class="quit" id="quit">Quit</button>
+    </div>
+    <div class="timer" id="timer"><i id="timebar"></i></div>
+    <div class="stage" id="stage"></div>
+    <div class="feedback" id="feedback"></div>
+  </section>
+
+  <!-- RESULTS -->
+  <section id="results" hidden>
+    <div class="result-head">
+      <span class="label" id="r-mode"></span>
+      <div class="big num" id="r-score">0</div>
+      <span class="newbest" id="r-best" hidden>New personal best</span>
+    </div>
+    <div class="stats">
+      <div class="stat"><b class="num" id="r-correct">0/15</b><span class="label">Correct</span></div>
+      <div class="stat"><b class="num" id="r-avg">0.0s</b><span class="label">Avg time</span></div>
+      <div class="stat"><b class="num" id="r-streak">0</b><span class="label">Best streak</span></div>
+    </div>
+    <div id="r-miss"></div>
+    <div class="actions">
+      <button class="cta" id="again">Play again</button>
+      <button class="ghost" id="menu">Change game or difficulty</button>
+    </div>
+  </section>
+</div>
+
+<script>
+const COUNTRIES = [["af","Afghanistan","AS"],["al","Albania","EU"],["dz","Algeria","AF"],["ad","Andorra","EU"],["ao","Angola","AF"],["ag","Antigua and Barbuda","AM"],["ar","Argentina","AM"],["am","Armenia","AS"],["au","Australia","OC"],["at","Austria","EU"],["az","Azerbaijan","AS"],["bs","Bahamas","AM"],["bh","Bahrain","ME"],["bd","Bangladesh","AS"],["bb","Barbados","AM"],["by","Belarus","EU"],["be","Belgium","EU"],["bz","Belize","AM"],["bj","Benin","AF"],["bt","Bhutan","AS"],["bo","Bolivia","AM"],["ba","Bosnia and Herzegovina","EU"],["bw","Botswana","AF"],["br","Brazil","AM"],["bn","Brunei","AS"],["bg","Bulgaria","EU"],["bf","Burkina Faso","AF"],["bi","Burundi","AF"],["cv","Cabo Verde","AF"],["kh","Cambodia","AS"],["cm","Cameroon","AF"],["ca","Canada","AM"],["cf","Central African Republic","AF"],["td","Chad","AF"],["cl","Chile","AM"],["cn","China","AS"],["co","Colombia","AM"],["km","Comoros","AF"],["cg","Congo","AF"],["cd","DR Congo","AF"],["cr","Costa Rica","AM"],["ci","Côte d'Ivoire","AF"],["hr","Croatia","EU"],["cu","Cuba","AM"],["cy","Cyprus","EU"],["cz","Czechia","EU"],["dk","Denmark","EU"],["dj","Djibouti","AF"],["dm","Dominica","AM"],["do","Dominican Republic","AM"],["ec","Ecuador","AM"],["eg","Egypt","ME"],["sv","El Salvador","AM"],["gq","Equatorial Guinea","AF"],["er","Eritrea","AF"],["ee","Estonia","EU"],["sz","Eswatini","AF"],["et","Ethiopia","AF"],["fj","Fiji","OC"],["fi","Finland","EU"],["fr","France","EU"],["ga","Gabon","AF"],["gm","Gambia","AF"],["ge","Georgia","AS"],["de","Germany","EU"],["gh","Ghana","AF"],["gr","Greece","EU"],["gd","Grenada","AM"],["gt","Guatemala","AM"],["gn","Guinea","AF"],["gw","Guinea-Bissau","AF"],["gy","Guyana","AM"],["ht","Haiti","AM"],["hn","Honduras","AM"],["hu","Hungary","EU"],["is","Iceland","EU"],["in","India","AS"],["id","Indonesia","AS"],["ir","Iran","ME"],["iq","Iraq","ME"],["ie","Ireland","EU"],["il","Israel","ME"],["it","Italy","EU"],["jm","Jamaica","AM"],["jp","Japan","AS"],["jo","Jordan","ME"],["kz","Kazakhstan","AS"],["ke","Kenya","AF"],["ki","Kiribati","OC"],["kw","Kuwait","ME"],["kg","Kyrgyzstan","AS"],["la","Laos","AS"],["lv","Latvia","EU"],["lb","Lebanon","ME"],["ls","Lesotho","AF"],["lr","Liberia","AF"],["ly","Libya","AF"],["li","Liechtenstein","EU"],["lt","Lithuania","EU"],["lu","Luxembourg","EU"],["mg","Madagascar","AF"],["mw","Malawi","AF"],["my","Malaysia","AS"],["mv","Maldives","AS"],["ml","Mali","AF"],["mt","Malta","EU"],["mh","Marshall Islands","OC"],["mr","Mauritania","AF"],["mu","Mauritius","AF"],["mx","Mexico","AM"],["fm","Micronesia","OC"],["md","Moldova","EU"],["mc","Monaco","EU"],["mn","Mongolia","AS"],["me","Montenegro","EU"],["ma","Morocco","AF"],["mz","Mozambique","AF"],["mm","Myanmar","AS"],["na","Namibia","AF"],["nr","Nauru","OC"],["np","Nepal","AS"],["nl","Netherlands","EU"],["nz","New Zealand","OC"],["ni","Nicaragua","AM"],["ne","Niger","AF"],["ng","Nigeria","AF"],["kp","North Korea","AS"],["mk","North Macedonia","EU"],["no","Norway","EU"],["om","Oman","ME"],["pk","Pakistan","AS"],["pw","Palau","OC"],["pa","Panama","AM"],["pg","Papua New Guinea","OC"],["py","Paraguay","AM"],["pe","Peru","AM"],["ph","Philippines","AS"],["pl","Poland","EU"],["pt","Portugal","EU"],["qa","Qatar","ME"],["ro","Romania","EU"],["ru","Russia","EU"],["rw","Rwanda","AF"],["kn","Saint Kitts and Nevis","AM"],["lc","Saint Lucia","AM"],["vc","Saint Vincent and the Grenadines","AM"],["ws","Samoa","OC"],["sm","San Marino","EU"],["st","São Tomé and Príncipe","AF"],["sa","Saudi Arabia","ME"],["sn","Senegal","AF"],["rs","Serbia","EU"],["sc","Seychelles","AF"],["sl","Sierra Leone","AF"],["sg","Singapore","AS"],["sk","Slovakia","EU"],["si","Slovenia","EU"],["sb","Solomon Islands","OC"],["so","Somalia","AF"],["za","South Africa","AF"],["kr","South Korea","AS"],["ss","South Sudan","AF"],["es","Spain","EU"],["lk","Sri Lanka","AS"],["sd","Sudan","AF"],["sr","Suriname","AM"],["se","Sweden","EU"],["ch","Switzerland","EU"],["sy","Syria","ME"],["tj","Tajikistan","AS"],["tz","Tanzania","AF"],["th","Thailand","AS"],["tl","Timor-Leste","AS"],["tg","Togo","AF"],["to","Tonga","OC"],["tt","Trinidad and Tobago","AM"],["tn","Tunisia","AF"],["tr","Turkey","ME"],["tm","Turkmenistan","AS"],["tv","Tuvalu","OC"],["ug","Uganda","AF"],["ua","Ukraine","EU"],["ae","United Arab Emirates","ME"],["gb","United Kingdom","EU"],["us","United States","AM"],["uy","Uruguay","AM"],["uz","Uzbekistan","AS"],["vu","Vanuatu","OC"],["ve","Venezuela","AM"],["vn","Vietnam","AS"],["ye","Yemen","ME"],["zm","Zambia","AF"],["zw","Zimbabwe","AF"],["va","Vatican City","EU"],["ps","Palestine","ME"]];
+const REGION = { EU: "Europe", AS: "Asia", AF: "Africa", AM: "Americas", OC: "Oceania", ME: "Middle East" };
+const EASY = "us gb fr de it es pt nl be ch at se no dk fi ie pl gr ru ua tr cn jp kr kp in pk id th vn ph my sg au nz ca mx br ar cl co pe ve cu jm za eg ng ke ma et gh sa il ir iq ae qa is hr cz hu ro rs al np lk bd mn ar".split(" ");
+const GROUPS = [
+  ["Pan-Arab colours", "eg iq sy ye sd jo ps ae kw ly"],
+  ["Nordic crosses", "dk se no fi is"],
+  ["Blue, yellow & red verticals", "td ro ad md"],
+  ["Red over white", "id mc pl sg"],
+  ["Green, white & orange", "ie ci it ne in"],
+  ["Red, white & blue bands", "nl lu py hr fr ru rs si sk cz"],
+  ["Slavic tricolours", "ru rs si sk hr cz bg"],
+  ["Pan-African colours", "gh gn ml sn cm bj tg et bf gw cg ss"],
+  ["Stars of the Southern Cross", "au nz fj tv sb"],
+  ["Central American blue & white", "hn ni sv gt ar uy"],
+  ["Gran Colombia yellow, blue & red", "co ec ve"],
+  ["Black, yellow & red", "de be ug"],
+  ["Red-white-red", "at lv lb pe ca"],
+  ["Star & crescent", "tr tn mv dz pk az mr ly km"],
+  ["Stripes with a canton", "my us lr tg cl cu"],
+  ["Gulf serrations", "qa bh ae"],
+  ["Green, white & red", "hu bg ir tj mx it"],
+  ["Yellow, green & red bands", "lt bo gh mm"],
+  ["A disc on a plain field", "jp bd pw la"],
+  ["Red, white & blue stripes", "th cr kp"],
+  ["East African stripes", "ke mw ss sd"],
+  ["Double-headed eagle", "al me rs"],
+  ["Diagonal bands", "kn tt tz cd sb na"],
+  ["Blue & yellow", "ua se kz bs"],
+  ["Central Asian emblems", "kz kg uz tm tj mn"],
+  ["Haiti & Liechtenstein", "ht li"],
+  ["Blue with a white star", "so fm"],
+  ["Red with a cross or star", "ch to ge vn"]
+].map(([name, codes]) => ({ name, codes: codes.split(" ") }));
+
+const DIFF_NOTE = {
+  easy: "Around 70 well-known flags. Wrong answers are picked at random.",
+  medium: "All 195 flags. Wrong answers come from the same region.",
+  hard: "Look-alikes only: Pan-Arab tricolours, Nordic crosses, Chad and Romania, Indonesia and Monaco, and 24 more families."
+};
+const ROUND = 15, LIMIT = 10;
+
+const byCode = Object.fromEntries(COUNTRIES.map(([c, n, r]) => [c, { code: c, name: n, region: r }]));
+const ALL = COUNTRIES.map(c => c[0]);
+const GROUPED = [...new Set(GROUPS.flatMap(g => g.codes))].filter(c => byCode[c]);
+let FLAG = {};
+
+const $ = id => document.getElementById(id);
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const store = {
+  get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+};
+
+const state = { mode: store.get("fr-mode") || "flag", diff: store.get("fr-diff") || "easy" };
+
+function groupsOf(code) { return GROUPS.filter(g => g.codes.includes(code)); }
+
+function distractors(ans, diff) {
+  const pick = [], add = list => { for (const c of shuffle(list)) { if (pick.length >= 3) break; if (c !== ans && !pick.includes(c) && byCode[c]) pick.push(c); } };
+  if (diff === "easy") add(EASY);
+  else if (diff === "medium") add(ALL.filter(c => byCode[c].region === byCode[ans].region));
+  else {
+    add(groupsOf(ans).flatMap(g => g.codes));
+    add(ALL.filter(c => byCode[c].region === byCode[ans].region));
+  }
+  add(ALL);
+  return pick;
+}
+
+function buildRound() {
+  const pool = state.diff === "easy" ? [...new Set(EASY)] : state.diff === "medium" ? ALL : GROUPED;
+  return shuffle(pool).slice(0, ROUND).map(ans => ({ ans, opts: shuffle([ans, ...distractors(ans, state.diff)]) }));
+}
+
+/* ---------- home ---------- */
+function bestKey() { return `fr-best-${state.mode}-${state.diff}`; }
+function renderHome() {
+  $("mode-flag").setAttribute("aria-pressed", state.mode === "flag");
+  $("mode-name").setAttribute("aria-pressed", state.mode === "name");
+  document.querySelectorAll(".seg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.d === state.diff));
+  $("diffnote").textContent = DIFF_NOTE[state.diff];
+  $("bestlabel").textContent = `${state.mode === "flag" ? "Name the flag" : "Find the flag"}, ${state.diff}`;
+  const b = store.get(bestKey());
+  $("bestval").textContent = b ? b.toLocaleString() : "—";
+}
+$("mode-flag").onclick = () => { state.mode = "flag"; store.set("fr-mode", "flag"); renderHome(); };
+$("mode-name").onclick = () => { state.mode = "name"; store.set("fr-mode", "name"); renderHome(); };
+document.querySelectorAll(".seg button").forEach(b => b.onclick = () => { state.diff = b.dataset.d; store.set("fr-diff", state.diff); renderHome(); });
+
+function show(id) { ["home", "play", "results"].forEach(s => $(s).hidden = s !== id); window.scrollTo(0, 0); }
+
+/* ---------- play ---------- */
+let game = null, raf = 0, advanceT = 0;
+
+function startGame() {
+  game = { qs: buildRound(), i: 0, score: 0, correct: 0, times: [], streak: 0, bestStreak: 0, misses: [] };
+  show("play");
+  ask();
+}
+
+function ask() {
+  const q = game.qs[game.i];
+  $("qn").textContent = game.i + 1;
+  $("score").textContent = game.score.toLocaleString();
+  $("feedback").innerHTML = "";
+  const stage = $("stage");
+  stage.innerHTML = "";
+  if (state.mode === "flag") {
+    const img = new Image(); img.className = "prompt-flag pop"; img.src = FLAG[q.ans]; img.alt = "Which country's flag is this?";
+    stage.append(img);
+  } else {
+    stage.innerHTML = `<div class="prompt-name pop"><span class="label">Find the flag of</span><h2></h2></div>`;
+    stage.querySelector("h2").textContent = byCode[q.ans].name;
+  }
+  const opts = document.createElement("div");
+  opts.className = "opts " + (state.mode === "flag" ? "names" : "flags");
+  q.opts.forEach((c, i) => {
+    const b = document.createElement("button");
+    b.className = "opt"; b.dataset.c = c;
+    if (state.mode === "flag") {
+      b.innerHTML = `<span class="k">${i + 1}</span><span></span>`;
+      b.lastChild.textContent = byCode[c].name;
+    } else {
+      b.innerHTML = `<span class="k">${i + 1}</span><img alt="Flag option ${i + 1}"><span class="cap"></span>`;
+      b.querySelector("img").src = FLAG[c];
+      b.querySelector(".cap").textContent = byCode[c].name;
+    }
+    b.onclick = () => answer(c);
+    opts.append(b);
+  });
+  stage.append(opts);
+  game.t0 = performance.now(); game.locked = false;
+  tick();
+}
+
+function tick() {
+  const el = (performance.now() - game.t0) / 1000, left = Math.max(0, LIMIT - el);
+  $("timebar").style.transform = `scaleX(${left / LIMIT})`;
+  $("timer").classList.toggle("low", left < 3);
+  if (left <= 0) return answer(null);
+  raf = requestAnimationFrame(tick);
+}
+
+function answer(c) {
+  if (game.locked) return;
+  game.locked = true; cancelAnimationFrame(raf);
+  const q = game.qs[game.i];
+  const secs = Math.min(LIMIT, (performance.now() - game.t0) / 1000);
+  const ok = c === q.ans;
+  let pts = 0;
+  if (ok) {
+    pts = 50 + Math.round(100 * (LIMIT - secs) / LIMIT);
+    game.correct++; game.streak++; game.bestStreak = Math.max(game.bestStreak, game.streak);
+  } else {
+    game.streak = 0;
+    game.misses.push({ ans: q.ans, picked: c });
+  }
+  game.score += pts; game.times.push(secs);
+  $("score").textContent = game.score.toLocaleString();
+
+  const opts = $("stage").querySelector(".opts");
+  opts.classList.add("revealed");
+  opts.querySelectorAll(".opt").forEach(b => {
+    b.disabled = true;
+    if (b.dataset.c === q.ans) b.classList.add("right");
+    else if (b.dataset.c === c) b.classList.add("wrong");
+  });
+
+  const fam = groupsOf(q.ans)[0];
+  const name = byCode[q.ans].name;
+  let msg, sub;
+  if (ok) { msg = `Right: ${name}`; sub = `${secs.toFixed(1)}s`; }
+  else { msg = c === null ? `Time's up. It was ${name}` : `It was ${name}`; sub = c ? `You picked ${byCode[c].name}` : ""; }
+  if (!ok && fam) sub = (sub ? sub + ". " : "") + `Family: ${fam.name}`;
+  const last = game.i === ROUND - 1;
+  $("feedback").innerHTML = `<div class="msg"></div><div style="display:flex;gap:12px;align-items:center"><span class="pts num ${ok ? "" : "zero"}">+${pts}</span><button class="next" id="next">${last ? "Results" : "Next"}</button></div>`;
+  const m = $("feedback").querySelector(".msg"); m.textContent = msg;
+  if (sub) { const s = document.createElement("small"); s.textContent = sub; m.append(s); }
+  $("next").onclick = next;
+  advanceT = setTimeout(next, ok ? 1100 : 2600);
+}
+
+function next() {
+  clearTimeout(advanceT);
+  if (!game || !game.locked) return;
+  game.i++;
+  if (game.i >= ROUND) finish(); else ask();
+}
+
+function finish() {
+  const prev = store.get(bestKey()) || 0;
+  const isBest = game.score > prev;
+  if (isBest) store.set(bestKey(), game.score);
+  $("r-mode").textContent = `${state.mode === "flag" ? "Name the flag" : "Find the flag"} · ${state.diff}`;
+  $("r-score").textContent = game.score.toLocaleString();
+  $("r-best").hidden = !isBest || game.score === 0;
+  $("r-correct").textContent = `${game.correct}/${ROUND}`;
+  $("r-avg").textContent = (game.times.reduce((a, b) => a + b, 0) / game.times.length).toFixed(1) + "s";
+  $("r-streak").textContent = game.bestStreak;
+  const box = $("r-miss"); box.innerHTML = "";
+  if (!game.misses.length) {
+    box.innerHTML = `<div class="perfect">Perfect round. Every flag right.</div>`;
+  } else {
+    box.innerHTML = `<div class="section"><span class="label">Flags to review</span><div class="miss"></div></div>`;
+    const list = box.querySelector(".miss");
+    game.misses.forEach(({ ans, picked }) => {
+      const row = document.createElement("div"); row.className = "miss-row";
+      row.innerHTML = `<img alt=""><div><b></b><small></small></div>`;
+      row.querySelector("img").src = FLAG[ans];
+      row.querySelector("img").alt = `Flag of ${byCode[ans].name}`;
+      row.querySelector("b").textContent = byCode[ans].name;
+      row.querySelector("small").textContent = picked ? `You picked ${byCode[picked].name}` : "Ran out of time";
+      list.append(row);
+    });
+  }
+  game.locked = false;
+  show("results");
+}
+
+$("quit").onclick = () => { cancelAnimationFrame(raf); clearTimeout(advanceT); game = null; renderHome(); show("home"); };
+$("start").onclick = startGame;
+$("again").onclick = startGame;
+$("menu").onclick = () => { renderHome(); show("home"); };
+
+document.addEventListener("keydown", e => {
+  if ($("play").hidden || !game) return;
+  if (!game.locked && /^[1-4]$/.test(e.key)) {
+    const b = $("stage").querySelectorAll(".opt")[+e.key - 1];
+    if (b) answer(b.dataset.c);
+  } else if (game.locked && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); next(); }
+});
+
+/* ---------- boot ---------- */
+renderHome();
+fetch("flags.json").then(r => r.json()).then(svgs => {
+  for (const c of ALL) FLAG[c] = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgs[c]);
+  const strip = $("strip");
+  shuffle(ALL).slice(0, 18).forEach(c => { const i = new Image(); i.src = FLAG[c]; i.alt = ""; strip.append(i); });
+  $("start").disabled = false; $("start").textContent = "Start";
+}).catch(() => { $("start").textContent = "Flags didn't load. Reload the page to try again."; });
+</script>
