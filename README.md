@@ -13,7 +13,11 @@ A timed flag quiz in the browser. It covers all 193 UN member states, plus the t
 - **Medium** – all 195 flags, wrong answers from the same region.
 - **Hard** – only flags with look-alikes (Pan-Arab tricolours, Nordic crosses, Chad / Romania, Indonesia / Monaco …). The wrong answers come from the same look-alike family.
 
-15 flags per round, 10 seconds each. A right answer scores 50, plus up to 100 more for speed. Best scores are kept in the browser's local storage. Keys 1–4 answer, Enter moves on.
+15 flags per round, 10 seconds each. A right answer scores 50, plus up to 100 more for speed. Keys 1–4 answer, Enter moves on.
+
+## Scoreboard
+
+After a round, a score that makes the top 10 can be saved under a name. There is one top-10 list for each game and difficulty. Scores are kept in the browser's local storage, so each device has its own scoreboard.
 
 ## Run locally
 
